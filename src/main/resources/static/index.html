@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo List</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            text-align: center;
+            background: #f4f6f9;
+        }
+
+        input {
+            padding: 8px;
+        }
+
+        button {
+            padding: 8px;
+            background: green;
+            color: white;
+            border: none;
+        }
+
+        table {
+            margin: 20px auto;
+            border-collapse: collapse;
+            width: 60%;
+            background: white;
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: #333;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+        
+    <h1>Minha Todo List</h1>
+
+    <input type="text" id="name" placeholder="Nome">
+    <input type="text" id="description" placeholder="Descrição">
+    <input type="number" id="priority" placeholder="Prioridade">
+    <button onclick="addTodo()">Adicionar</button>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Descrição</th>
+                <th>Prioridade</th>
+                <th>Concluído</th>
+                <th>Ação</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+
+    <script>
+        const api = "http://localhost:8080/todos";
+
+        function loadTodos() {
+            fetch(api)
+                .then(res => res.json())
+                .then(data => {
+                    const body = document.getElementById("tableBody");
+                    body.innerHTML = "";
+
+                    data.forEach(todo => {
+                        body.innerHTML += `
+                            <tr>
+                                <td>${todo.id}</td>
+                                <td>${todo.name}</td>
+                                <td>${todo.description}</td>
+                                <td>${todo.priority}</td>
+                                <td>${todo.done ? "✔" : "❌"}</td>
+                                <td>
+                                    ${!todo.done ? 
+                                        `<button onclick="finishTodo(${todo.id}, '${todo.name}', '${todo.description}', ${todo.priority})">
+                                            Concluir
+                                        </button>` 
+                                        : ""
+                                    }
+                                    <button onclick="deleteTodo(${todo.id})">Excluir</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                });
+        }
+
+        function addTodo() {
+            const name = document.getElementById("name").value;
+            const description = document.getElementById("description").value;
+            const priority = document.getElementById("priority").value;
+
+            fetch(api, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: name,
+                    description: description,
+                    priority: parseInt(priority),
+                    done: false
+                })
+            })
+            .then(() => {
+                loadTodos();
+            });
+        }
+
+        function deleteTodo(id) {
+            fetch(api + "/" + id, {
+                method: "DELETE"
+            }).then(() => loadTodos());
+        }
+
+        loadTodos();
+
+        function finishTodo(id, name, description, priority) {
+            fetch(api, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    id: id,
+                    name: name,
+                    description: description,
+                    priority: priority,
+                    done: true
+                })
+            }).then(() => loadTodos());
+        }
+    </script>
+
+</body>
+</html>
